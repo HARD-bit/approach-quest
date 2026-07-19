@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Approach Quest</title>
+<style>
+  :root{
+    --bg:#0f0b1a; --bg2:#171226; --card:#1e1830; --card2:#251d3a; --border:#352a52;
+    --text:#f1eefc; --muted:#a89bc9;
+    --accent:#ff4d8d; --accent2:#8b5cf6; --gold:#ffc857; --green:#3ddc97; --red:#ff5c5c; --orange:#ffa64d;
+    --hard:#ff4d8d; --legend:#7dd3fc;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+    background:radial-gradient(circle at 20% 0%, #2a1b45 0%, var(--bg) 55%);
+    color:var(--text); padding:24px 16px 60px;
+  }
+  .wrap{max-width:640px;margin:0 auto;}
+  h1{
+    font-size:26px;margin:0 0 4px;
+    background:linear-gradient(90deg,var(--accent),var(--accent2));
+    -webkit-background-clip:text;background-clip:text;color:transparent;letter-spacing:.5px;
+  }
+  .subtitle{color:var(--muted);font-size:13px;margin-bottom:20px;}
+
+  .topcard{
+    background:linear-gradient(135deg,var(--card2),var(--card));
+    border:1px solid var(--border);border-radius:18px;padding:18px 20px;margin-bottom:12px;
+  }
+  .level-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:6px;}
+  .level-badge{font-size:15px;font-weight:700;}
+  .level-badge span{color:var(--gold);}
+  .streak{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:12px;}
+  .streak b{color:var(--text);}
+  .combo{color:var(--legend);font-weight:700;}
+  .xpbar-outer{height:14px;background:#000000aa;border-radius:8px;overflow:hidden;border:1px solid var(--border);}
+  .xpbar-inner{height:100%;background:linear-gradient(90deg,var(--accent2),var(--accent));transition:width .4s ease;}
+  .xptext{font-size:11px;color:var(--muted);margin-top:6px;text-align:right;}
+
+  .penalty-note{
+    font-size:11.5px;color:var(--muted);background:#00000033;border:1px dashed var(--border);
+    border-radius:10px;padding:8px 10px;margin-bottom:16px;text-align:center;
+  }
+  .penalty-note b{color:var(--red);}
+
+  .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:18px;}
+  .stat{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px 6px;text-align:center;}
+  .stat .n{font-size:18px;font-weight:800;}
+  .stat .l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;}
+
+  .section-title{font-size:13px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin:22px 0 10px;
+    display:flex;justify-content:space-between;align-items:center;}
+  .daily-progress{font-size:11px;color:var(--muted);}
+  .daily-progress b{color:var(--gold);}
+
+  .mission-card{
+    background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:10px;position:relative;
+  }
+  .mission-card.done{border-color:var(--green);}
+  .mission-card.legendary{border-color:var(--legend);background:linear-gradient(135deg,#1c2a3a,var(--card));}
+  .tier-pill{display:inline-block;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;margin-bottom:8px;}
+  .tier-hard{background:#ff4d8d22;color:var(--hard);}
+  .tier-secondary{background:#8b5cf622;color:var(--accent2);}
+  .tier-legend{background:#7dd3fc22;color:var(--legend);}
+  .check{float:right;color:var(--green);font-weight:800;}
+  .mission-text{font-size:15px;line-height:1.4;margin-bottom:12px;}
+  .mission-actions{display:flex;gap:8px;flex-wrap:wrap;}
+
+  button{font-family:inherit;cursor:pointer;border:none;border-radius:10px;padding:9px 14px;font-size:13px;font-weight:600;transition:transform .1s ease;}
+  button:active{transform:scale(0.96);}
+  .btn-primary{background:linear-gradient(90deg,var(--accent2),var(--accent));color:#fff;}
+  .btn-secondary{background:var(--card2);color:var(--text);border:1px solid var(--border);}
+  .btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border);}
+  .btn-icon{background:var(--card2);color:var(--text);border:1px solid var(--border);padding:6px 10px;}
+
+  .cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+  .cal-title{font-size:13px;font-weight:700;}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;}
+  .cal-dow{font-size:10px;color:var(--muted);text-align:center;padding-bottom:2px;}
+  .cal-cell{
+    aspect-ratio:1/1;border-radius:8px;display:flex;align-items:center;justify-content:center;
+    font-size:11px;font-weight:700;border:1px solid var(--border);color:var(--muted);
+  }
+  .cal-cell.empty{border:none;}
+  .cal-cell.clear{background:var(--green);color:#062015;border-color:var(--green);}
+  .cal-cell.partial{background:var(--orange);color:#2b1600;border-color:var(--orange);}
+  .cal-cell.missed{background:#3a1620;color:var(--red);border-color:#5c2230;}
+  .cal-cell.today{border-color:var(--accent);color:var(--text);box-shadow:0 0 0 2px #ff4d8d55;}
+  .cal-cell.future{color:#4a4260;}
+  .cal-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:10.5px;color:var(--muted);margin-top:10px;}
+  .cal-legend span{display:flex;align-items:center;gap:5px;}
+  .dot{width:9px;height:9px;border-radius:3px;display:inline-block;}
+
+  .badges-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+  .badge{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px 8px;text-align:center;opacity:.35;filter:grayscale(1);}
+  .badge.unlocked{opacity:1;filter:none;border-color:var(--gold);box-shadow:0 0 0 1px var(--gold) inset;}
+  .badge .icon{font-size:24px;margin-bottom:4px;}
+  .badge .name{font-size:10.5px;font-weight:700;line-height:1.25;}
+
+  .log-list{display:flex;flex-direction:column;gap:8px;max-height:260px;overflow-y:auto;}
+  .log-item{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px 12px;font-size:12.5px;}
+  .log-item.penalty{border-color:var(--red);}
+  .log-item .meta{color:var(--muted);font-size:11px;margin-top:3px;}
+  .empty{color:var(--muted);font-size:13px;padding:16px 0;text-align:center;}
+
+  .quote{font-style:italic;color:var(--muted);font-size:12.5px;text-align:center;margin:20px 0 4px;padding:0 10px;}
+  .footer-actions{text-align:center;margin-top:26px;}
+  .footer-actions button{font-size:11px;padding:6px 12px;}
+
+  .modal-overlay{position:fixed;inset:0;background:#000000cc;display:none;align-items:flex-end;justify-content:center;z-index:50;}
+  .modal-overlay.open{display:flex;}
+  .modal{background:var(--card2);border:1px solid var(--border);border-radius:20px 20px 0 0;padding:20px;width:100%;max-width:640px;}
+  .modal h3{margin:0 0 12px;font-size:16px;}
+  .modal .mission-preview{font-size:13.5px;color:var(--muted);margin-bottom:14px;}
+  .outcome-row{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;}
+  .outcome-btn{text-align:left;padding:11px 14px;border-radius:12px;background:var(--card);border:1px solid var(--border);color:var(--text);font-size:13.5px;}
+  .outcome-btn:hover{border-color:var(--accent2);}
+  textarea{width:100%;background:var(--card);border:1px solid var(--border);border-radius:10px;color:var(--text);padding:10px;font-family:inherit;font-size:13px;resize:vertical;min-height:60px;margin-bottom:12px;}
+  .toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,var(--accent2),var(--accent));color:#fff;padding:10px 18px;border-radius:30px;font-size:13px;font-weight:700;box-shadow:0 6px 20px #00000066;z-index:100;opacity:0;pointer-events:none;transition:opacity .25s ease, transform .25s ease;text-align:center;}
+  .toast.penalty{background:linear-gradient(90deg,#8b1e3f,var(--red));}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(6px);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>⚡ Approach Quest</h1>
+  <div class="subtitle">1 missione fissa (chiedi il numero) + 2 secondarie ogni giorno. Chiudile tutte, o paghi lo scotto.</div>
+
+  <div class="topcard">
+    <div class="level-row">
+      <div class="level-badge">Livello <span id="levelNum">1</span> — <span id="levelTitle">Matricola</span></div>
+      <div class="streak">🔥 <b id="streakNum">0</b> giorni <span class="combo" id="comboText"></span></div>
+    </div>
+    <div class="xpbar-outer"><div class="xpbar-inner" id="xpBar" style="width:0%"></div></div>
+    <div class="xptext"><span id="xpCurrent">0</span> / <span id="xpNext">50</span> XP</div>
+  </div>
+
+  <div class="penalty-note">Se a fine giornata non completi tutte e 3: la streak si azzera. Se non ne completi <b>nessuna</b>: perdi anche XP.</div>
+
+  <div class="stats-grid">
+    <div class="stat"><div class="n" id="statTotal">0</div><div class="l">Approach</div></div>
+    <div class="stat"><div class="n" id="statNumbers">0</div><div class="l">Numeri</div></div>
+    <div class="stat"><div class="n" id="statBestStreak">0</div><div class="l">Best streak</div></div>
+    <div class="stat"><div class="n" id="statXP">0</div><div class="l">XP totali</div></div>
+  </div>
+
+  <div class="section-title">
+    <span>Missioni di oggi</span>
+    <span class="daily-progress"><b id="dailyDone">0</b>/3 completate</span>
+  </div>
+  <div id="missionsToday"></div>
+
+  <div class="section-title"><span>Calendario</span></div>
+  <div class="topcard" style="padding:14px 16px;">
+    <div class="cal-header">
+      <button class="btn-icon" id="calPrev">‹</button>
+      <div class="cal-title" id="calTitle">—</div>
+      <button class="btn-icon" id="calNext">›</button>
+    </div>
+    <div class="cal-grid" id="calDow"></div>
+    <div class="cal-grid" id="calGrid" style="margin-top:5px;"></div>
+    <div class="cal-legend">
+      <span><i class="dot" style="background:var(--green)"></i>Giornata piena</span>
+      <span><i class="dot" style="background:var(--orange)"></i>Parziale</span>
+      <span><i class="dot" style="background:#3a1620;border:1px solid #5c2230"></i>Saltata</span>
+      <span><i class="dot" style="background:transparent;border:2px solid var(--accent)"></i>Oggi</span>
+    </div>
+  </div>
+
+  <div class="section-title">Achievement</div>
+  <div class="badges-grid" id="badgesGrid"></div>
+
+  <div class="section-title">Registro</div>
+  <div class="log-list" id="logList"></div>
+
+  <div class="quote" id="quoteText"></div>
+
+  <div class="footer-actions">
+    <button class="btn-ghost" id="btnReset">Reset progressi</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h3>Com'è andata?</h3>
+    <div class="mission-preview" id="modalMissionText"></div>
+    <div class="outcome-row">
+      <button class="outcome-btn" data-outcome="number">📱🔥 Numero preso (bonus XP extra, sempre)</button>
+      <button class="outcome-btn" data-outcome="done">✅ Fatto — missione completata</button>
+      <button class="outcome-btn" data-outcome="attempt">💪 Ci ho provato (metà XP, conta per lo slot)</button>
+      <button class="outcome-btn" data-outcome="pass">⏳ Non l'ho fatta oggi (niente XP, slot resta aperto)</button>
+    </div>
+    <textarea id="modalNote" placeholder="Nota veloce (opzionale): cosa è successo, come ti sei sentito..."></textarea>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button class="btn-ghost" id="btnModalCancel">Annulla</button>
+      <button class="btn-primary" id="btnModalConfirm">Conferma</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script></script>
+</body>
+</html>
