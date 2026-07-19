@@ -371,11 +371,29 @@ function showToast(msg, isPenalty){
 }
 
 // ---------- Grading past days (penalty logic) ----------
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+const MAX_GRADE_DAYS = 90; // hard safety cap: never grade/loop more than this many days back
+
 function gradePastDays(){
   const today = todayStr();
-  let cursor = state.lastGradedDate ? addDays(state.lastGradedDate, 1) : null;
-  if(!cursor){ state.lastGradedDate = addDays(today, -1); saveState(); return; }
-  while(cursor < today){
+
+  // Validate lastGradedDate: must be a well-formed date string, not in the
+  // future, and not absurdly far in the past (corrupted/old localStorage
+  // data from a stale build could otherwise make this loop run for years —
+  // or, if the string is malformed, addDays()/toISOString() could throw or
+  // silently fail to advance, hanging the loop forever and freezing the page).
+  let lgd = state.lastGradedDate;
+  if(!lgd || typeof lgd !== "string" || !DATE_RE.test(lgd) || lgd >= today){
+    lgd = addDays(today, -1);
+  } else {
+    const oldestAllowed = addDays(today, -MAX_GRADE_DAYS);
+    if(lgd < oldestAllowed) lgd = oldestAllowed;
+  }
+
+  let cursor = addDays(lgd, 1);
+  let guard = 0;
+  while(cursor < today && guard < MAX_GRADE_DAYS){
+    guard++;
     const rec = state.days[cursor];
     const doneCount = rec ? SLOTS.filter(k=>rec.completed[k]).length : 0;
     const allThree = rec && SLOTS.every(k=>rec.completed[k]);
@@ -389,7 +407,9 @@ function gradePastDays(){
         state.streak = 0;
       }
     }
-    cursor = addDays(cursor, 1);
+    const next = addDays(cursor, 1);
+    if(next <= cursor) break; // extra safety: date failed to advance, bail out
+    cursor = next;
   }
   state.lastGradedDate = addDays(today, -1);
   saveState();
