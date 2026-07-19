@@ -287,6 +287,26 @@ const QUOTES = [
 
 const STORAGE_KEY = "approachQuestData_v3";
 
+// Safe storage wrapper: some mobile browsers (Safari private mode, in-app
+// WebViews from WhatsApp/Instagram/etc.) block or throw on localStorage
+// access entirely. Without this guard, a single throw here kills the whole
+// script before any button gets wired up, and the page looks "frozen".
+let storageOK = true;
+let memoryStore = {};
+function safeGet(key){
+  try{ return localStorage.getItem(key); }
+  catch(e){ storageOK = false; return (key in memoryStore) ? memoryStore[key] : null; }
+}
+function safeSet(key, val){
+  try{ localStorage.setItem(key, val); }
+  catch(e){ storageOK = false; memoryStore[key] = val; }
+}
+function safeRemove(key){
+  try{ localStorage.removeItem(key); }
+  catch(e){ storageOK = false; }
+  delete memoryStore[key];
+}
+
 function defaultState(){
   return {
     totalXP:0, streak:0, bestStreak:0, numbers:0, totalAttempts:0, perfectDays:0,
@@ -294,13 +314,14 @@ function defaultState(){
   };
 }
 function loadState(){
-  const raw = localStorage.getItem(STORAGE_KEY);
+  const raw = safeGet(STORAGE_KEY);
   if(raw){ try{ return Object.assign(defaultState(), JSON.parse(raw)); }catch(e){} }
   return defaultState();
 }
-function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+function saveState(){ safeSet(STORAGE_KEY, JSON.stringify(state)); }
 
-let state = loadState();
+let state = defaultState();
+try{ state = loadState(); }catch(e){ console.error("loadState failed", e); }
 
 function todayStr(){ return new Date().toISOString().slice(0,10); }
 function addDays(dateStr, n){
@@ -603,7 +624,7 @@ document.getElementById("btnModalConfirm").onclick = () => {
 
 document.getElementById("btnReset").onclick = () => {
   if(confirm("Sicuro di voler azzerare tutti i progressi? Non si può annullare.")){
-    localStorage.removeItem(STORAGE_KEY);
+    safeRemove(STORAGE_KEY);
     state = loadState();
     gradePastDays();
     render();
@@ -613,8 +634,19 @@ document.getElementById("btnReset").onclick = () => {
 
 document.getElementById("quoteText").textContent = "“" + pickRandom(QUOTES) + "”";
 
-gradePastDays();
-render();
+try{
+  gradePastDays();
+  render();
+  if(!storageOK){
+    setTimeout(()=>showToast("⚠️ Salvataggio non disponibile in questa modalità di navigazione (es. privata). L'app funziona ma i progressi non verranno ricordati.", true), 1200);
+  }
+}catch(e){
+  console.error("Init failed", e);
+  const container = document.getElementById("missionsToday");
+  if(container){
+    container.innerHTML = '<div class="empty">Errore di avvio. Prova a ricaricare la pagina. Se persiste, aprila in una scheda normale (non privata/in-app).</div>';
+  }
+}
 </script>
 </body>
 </html>
